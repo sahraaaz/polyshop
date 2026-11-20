@@ -1,4 +1,6 @@
-# بوفه — BOOFEH Market
+# PolyMoly
+
+PolyMoly is the campus platform. Polyshop is its store; Poly Club, PolyGame and Poly Lab retain their existing features.
 
 نمونه یک مارکت‌پلیس مستقل دانشجویی برای فروش مرچ، خدمات خلاق و بلیت رویدادها. این نسخه با React و Vite ساخته شده است.
 
