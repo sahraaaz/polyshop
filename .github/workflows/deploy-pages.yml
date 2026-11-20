@@ -1,4 +1,4 @@
-name: Deploy Polymoly to GitHub Pages
+name: Deploy PolyMoly to GitHub Pages
 
 on:
   push:
