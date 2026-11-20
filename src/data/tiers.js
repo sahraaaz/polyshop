@@ -3,7 +3,7 @@ export const tiers = [
   { key: 'explorer', title: 'Explorer', fa: 'جست‌وجوگر', min: 60, avatar: '🐣', color: 'orange' },
   { key: 'maker', title: 'Maker', fa: 'سازنده', min: 150, avatar: '🐥', color: 'pink' },
   { key: 'campus-star', title: 'Campus Star', fa: 'ستارهٔ دانشگاه', min: 300, avatar: '🦊', color: 'blue' },
-  { key: 'legend', title: 'Poly Legend', fa: 'افسانهٔ Polyshop', min: 600, avatar: '🦁', color: 'mix' },
+  { key: 'legend', title: 'Poly Legend', fa: 'افسانهٔ Polymoly', min: 600, avatar: '🦁', color: 'mix' },
 ]
 
 export function getTierProfile(name, { orders = [], reviews = [], catalog = [], ideas = [], communityMessages = [] } = {}) {
