@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import Game2048 from './Game2048.jsx'
+
 const fa = (value, options) => new Intl.NumberFormat('fa-IR', options).format(value)
 const shuffle = (items) => [...items].sort(() => Math.random() - .5)
 const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
@@ -60,14 +62,15 @@ function TicTacToe({ winsCount, onWin }) {
 }
 
 export default function PolyGame({ onBack }) {
-  const [active, setActive] = useState('reaction')
+  const [active, setActive] = useState('2048')
   const [scores, setScores] = useState(() => { try { return JSON.parse(localStorage.getItem('polygame-scores-v1')) || {} } catch { return {} } })
   useEffect(() => localStorage.setItem('polygame-scores-v1', JSON.stringify(scores)), [scores])
   const setBest = (key, value) => setScores((prev) => ({ ...prev, [key]: value }))
   const games = useMemo(() => [
+    { id: '2048', icon: '2048', title: '2048 · ترکیب عددها', time: 'تک‌نفره', desc: 'بکش، ترکیب کن و رکورد بزن.' },
     { id: 'reaction', icon: '⚡', title: 'واکنش سریع', time: '۱۰ ثانیه', desc: 'تا سبزشدن صبر کن و سریع بزن.' },
     { id: 'numbers', icon: '123', title: 'عدد‌بازی', time: '۲۰ ثانیه', desc: 'عددها را از یک تا نه پیدا کن.' },
     { id: 'xo', icon: 'XO', title: 'دوز با ربات', time: '۳۰ ثانیه', desc: 'یک دست کوتاه مقابل ربات Poly.' },
   ], [])
-  return <section className="polygame-page" id="polygame"><div className="polygame-hero"><button className="game-back" onClick={onBack}>→ برگشت به فروشگاه</button><span className="game-kicker">POLYGAME / QUICK BREAK</span><h1>بین دو کلاس،<br/><em>یه دست بازی.</em></h1><p>بازی‌های خیلی سبک و کوتاه؛ بدون نصب، بدون ثبت‌نام و بدون اینکه دیتات تموم شه.</p><div className="game-pills"><span>● آفلاین بعد از بارگذاری</span><span>رکورد روی همین دستگاه</span><span>هر بازی زیر یک دقیقه</span></div></div><div className="game-shell"><aside className="game-library"><div><small>سه بازی فوری</small><b>یکی رو انتخاب کن</b></div>{games.map((game) => <button key={game.id} className={active === game.id ? 'active' : ''} onClick={() => setActive(game.id)}><span>{game.icon}</span><div><b>{game.title}</b><small>{game.desc}</small></div><i>{game.time}</i></button>)}</aside><main className="game-stage"><header><div><span>{games.find((game) => game.id === active)?.icon}</span><div><small>NOW PLAYING</small><h2>{games.find((game) => game.id === active)?.title}</h2></div></div><b>صدای زنگ رو می‌شنوی؟ جمعش کن 😄</b></header>{active === 'reaction' && <ReactionGame best={scores.reaction} onBest={(value) => setBest('reaction', value)}/>} {active === 'numbers' && <NumberGame best={scores.numbers} onBest={(value) => setBest('numbers', value)}/>} {active === 'xo' && <TicTacToe winsCount={scores.xoWins || 0} onWin={() => setScores((prev) => ({ ...prev, xoWins: (prev.xoWins || 0) + 1 }))}/>}</main></div><div className="game-note"><span>PG!</span><div><b>نسخه اول PolyGame</b><p>رکوردها فعلاً فقط روی مرورگر خودت می‌مانند. بعداً می‌توانیم جدول رتبه‌بندی بین دانشکده‌ها هم اضافه کنیم.</p></div></div></section>
+  return <section className="polygame-page" id="polygame"><div className="polygame-hero"><button className="game-back" onClick={onBack}>→ برگشت به فروشگاه</button><span className="game-kicker">POLYGAME / QUICK BREAK</span><h1>بین دو کلاس،<br/><em>یه دست بازی.</em></h1><p>بازی‌های خیلی سبک و کوتاه؛ بدون نصب، بدون ثبت‌نام و بدون اینکه دیتات تموم شه.</p><div className="game-pills"><span>● آفلاین بعد از بارگذاری</span><span>رکورد روی همین دستگاه</span><span>کوتاه بازی کن، بعداً ادامه بده</span></div></div><div className="game-shell"><aside className="game-library"><div><small>چهار بازی سبک</small><b>یکی رو انتخاب کن</b></div>{games.map((game) => <button key={game.id} className={active === game.id ? 'active' : ''} onClick={() => setActive(game.id)}><span>{game.icon}</span><div><b>{game.title}</b><small>{game.desc}</small></div><i>{game.time}</i></button>)}</aside><main className="game-stage"><header><div><span>{games.find((game) => game.id === active)?.icon}</span><div><small>NOW PLAYING</small><h2>{games.find((game) => game.id === active)?.title}</h2></div></div><b>صدای زنگ رو می‌شنوی؟ جمعش کن 😄</b></header>{active === '2048' && <Game2048/>}{active === 'reaction' && <ReactionGame best={scores.reaction} onBest={(value) => setBest('reaction', value)}/>} {active === 'numbers' && <NumberGame best={scores.numbers} onBest={(value) => setBest('numbers', value)}/>} {active === 'xo' && <TicTacToe winsCount={scores.xoWins || 0} onWin={() => setScores((prev) => ({ ...prev, xoWins: (prev.xoWins || 0) + 1 }))}/>}</main></div><div className="game-note"><span>PG!</span><div><b>نسخه اول PolyGame</b><p>رکوردها فعلاً فقط روی مرورگر خودت می‌مانند. بعداً می‌توانیم جدول رتبه‌بندی بین دانشکده‌ها هم اضافه کنیم.</p></div></div></section>
 }
