@@ -5,3 +5,4 @@ outputs
 *.local
 *.log
 current-preview.png
+arcade-data/

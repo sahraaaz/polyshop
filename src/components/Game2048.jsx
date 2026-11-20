@@ -12,7 +12,7 @@ function readGame() {
   return newGame()
 }
 
-export default function Game2048() {
+export default function Game2048({ onScore }) {
   const [game, setGame] = useState(readGame)
   const [best, setBest] = useState(() => { try { return Number(localStorage.getItem(`${key}-best`)) || 0 } catch { return 0 } })
   const [previous, setPrevious] = useState(null)
@@ -20,6 +20,7 @@ export default function Game2048() {
   const boardRef = useRef(null)
   const won = game.board.some((n) => n >= 2048) && !game.continued
   const over = !hasMoves(game.board)
+  useEffect(() => { onScore?.(game.score) }, [game.score, onScore])
   useEffect(() => {
     const record = Math.max(best, game.score)
     if (record > best) setBest(record)

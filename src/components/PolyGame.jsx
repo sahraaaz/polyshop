@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import Game2048 from './Game2048.jsx'
+import Snake from './Snake.jsx'
+import ArcadeBoard from './ArcadeBoard.jsx'
+import OnlineLobby from './OnlineLobby.jsx'
+import './Arcade.css'
 
 const fa = (value, options) => new Intl.NumberFormat('fa-IR', options).format(value)
-const shuffle = (items) => [...items].sort(() => Math.random() - .5)
 const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
 const winnerOf = (board) => wins.find((line) => board[line[0]] && board[line[0]] === board[line[1]] && board[line[0]] === board[line[2]])?.map((index) => board[index])[0] || (board.every(Boolean) ? 'draw' : '')
 
@@ -27,20 +30,6 @@ function ReactionGame({ best, onBest }) {
   return <div className="micro-game reaction-game"><div className="game-metric"><small>بهترین واکنش</small><b>{best ? `${fa(best)} ms` : '—'}</b></div><button className={`reaction-pad ${phase}`} onClick={phase === 'waiting' || phase === 'ready' ? tap : start}><span>{copy[0]}</span><small>{copy[1]}</small></button><p>وقتی صفحه سبز شد بزن؛ قبلش بزنی باختی.</p></div>
 }
 
-function NumberGame({ best, onBest }) {
-  const [numbers, setNumbers] = useState(() => shuffle([1,2,3,4,5,6,7,8,9]))
-  const [next, setNext] = useState(0)
-  const [startedAt, setStartedAt] = useState(0)
-  const [result, setResult] = useState(null)
-  const start = () => { setNumbers(shuffle([1,2,3,4,5,6,7,8,9])); setNext(1); setResult(null); setStartedAt(performance.now()) }
-  const choose = (value) => {
-    if (!next || value !== next) return
-    if (value === 9) { const time = Math.round(performance.now() - startedAt); setResult(time); setNext(0); if (!best || time < best) onBest(time) }
-    else setNext(value + 1)
-  }
-  return <div className="micro-game number-game"><div className="game-metric"><small>بهترین زمان</small><b>{best ? `${(best / 1000).toLocaleString('fa-IR', { maximumFractionDigits: 2 })} ثانیه` : '—'}</b></div><div className="number-board">{numbers.map((number) => <button key={number} disabled={!next || number < next} className={number < next ? 'done' : ''} onClick={() => choose(number)}>{number < next ? '✓' : fa(number)}</button>)}</div><div className="number-status">{next ? <span>بعدی: <b>{fa(next)}</b></span> : result ? <span>زمان تو: <b>{(result / 1000).toLocaleString('fa-IR', { maximumFractionDigits: 2 })} ثانیه</b></span> : <span>از ۱ تا ۹، سریع و مرتب.</span>}<button onClick={start}>{next ? 'شروع دوباره' : result ? 'دوباره' : 'شروع'}</button></div></div>
-}
-
 function TicTacToe({ winsCount, onWin }) {
   const [board, setBoard] = useState(Array(9).fill(''))
   const [turn, setTurn] = useState('human')
@@ -62,6 +51,19 @@ function TicTacToe({ winsCount, onWin }) {
 }
 
 export default function PolyGame({ onBack }) {
+  const [records, setRecords] = useState(() => { try { return JSON.parse(localStorage.getItem('poly-arcade-records')) || [] } catch { return [] } })
+  const [playerName, setPlayerName] = useState(() => { try { return localStorage.getItem('poly-arcade-name') || 'بازیکن' } catch { return 'بازیکن' } })
+  const record = useCallback((game, score) => {
+    if (!score) return
+    setRecords((rows) => {
+      const old = rows.find((r) => r.game === game && r.name === playerName)
+      if (old && (game === 'reaction' ? score >= old.score : score <= old.score)) return rows
+      return [...rows.filter((r) => r !== old), {game, name:playerName, score}]
+    })
+  }, [playerName])
+  const record2048 = useCallback((score) => record('2048',score),[record])
+  const recordSnake = useCallback((score) => record('snake',score),[record])
+  useEffect(() => { try { localStorage.setItem('poly-arcade-records',JSON.stringify(records)); localStorage.setItem('poly-arcade-name',playerName) } catch {} },[records,playerName])
   const [active, setActive] = useState('2048')
   const [scores, setScores] = useState(() => { try { return JSON.parse(localStorage.getItem('polygame-scores-v1')) || {} } catch { return {} } })
   useEffect(() => localStorage.setItem('polygame-scores-v1', JSON.stringify(scores)), [scores])
@@ -69,8 +71,9 @@ export default function PolyGame({ onBack }) {
   const games = useMemo(() => [
     { id: '2048', icon: '2048', title: '2048 · ترکیب عددها', time: 'تک‌نفره', desc: 'بکش، ترکیب کن و رکورد بزن.' },
     { id: 'reaction', icon: '⚡', title: 'واکنش سریع', time: '۱۰ ثانیه', desc: 'تا سبزشدن صبر کن و سریع بزن.' },
-    { id: 'numbers', icon: '123', title: 'عدد‌بازی', time: '۲۰ ثانیه', desc: 'عددها را از یک تا نه پیدا کن.' },
+    { id: 'snake', icon: 'S', title: 'Supply Snake', time: 'تک‌نفره', desc: 'بسته‌ها را جمع کن و رکورد بزن.' },
+    { id: 'online', icon: 'VS', title: 'لابی آنلاین', time: 'دونفره', desc: 'چهار در یک ردیف با حریف آنلاین.' },
     { id: 'xo', icon: 'XO', title: 'دوز با ربات', time: '۳۰ ثانیه', desc: 'یک دست کوتاه مقابل ربات Poly.' },
   ], [])
-  return <section className="polygame-page" id="polygame"><div className="polygame-hero"><button className="game-back" onClick={onBack}>→ برگشت به فروشگاه</button><span className="game-kicker">POLYGAME / QUICK BREAK</span><h1>بین دو کلاس،<br/><em>یه دست بازی.</em></h1><p>بازی‌های خیلی سبک و کوتاه؛ بدون نصب، بدون ثبت‌نام و بدون اینکه دیتات تموم شه.</p><div className="game-pills"><span>● آفلاین بعد از بارگذاری</span><span>رکورد روی همین دستگاه</span><span>کوتاه بازی کن، بعداً ادامه بده</span></div></div><div className="game-shell"><aside className="game-library"><div><small>چهار بازی سبک</small><b>یکی رو انتخاب کن</b></div>{games.map((game) => <button key={game.id} className={active === game.id ? 'active' : ''} onClick={() => setActive(game.id)}><span>{game.icon}</span><div><b>{game.title}</b><small>{game.desc}</small></div><i>{game.time}</i></button>)}</aside><main className="game-stage"><header><div><span>{games.find((game) => game.id === active)?.icon}</span><div><small>NOW PLAYING</small><h2>{games.find((game) => game.id === active)?.title}</h2></div></div><b>صدای زنگ رو می‌شنوی؟ جمعش کن 😄</b></header>{active === '2048' && <Game2048/>}{active === 'reaction' && <ReactionGame best={scores.reaction} onBest={(value) => setBest('reaction', value)}/>} {active === 'numbers' && <NumberGame best={scores.numbers} onBest={(value) => setBest('numbers', value)}/>} {active === 'xo' && <TicTacToe winsCount={scores.xoWins || 0} onWin={() => setScores((prev) => ({ ...prev, xoWins: (prev.xoWins || 0) + 1 }))}/>}</main></div><div className="game-note"><span>PG!</span><div><b>نسخه اول PolyGame</b><p>رکوردها فعلاً فقط روی مرورگر خودت می‌مانند. بعداً می‌توانیم جدول رتبه‌بندی بین دانشکده‌ها هم اضافه کنیم.</p></div></div></section>
+  return <section className="polygame-page" id="polygame"><div className="polygame-hero"><button className="game-back" onClick={onBack}>→ برگشت به فروشگاه</button><span className="game-kicker">POLYGAME / QUICK BREAK</span><h1>بین دو کلاس،<br/><em>یه دست بازی.</em></h1><p>بازی‌های خیلی سبک و کوتاه؛ بدون نصب، بدون ثبت‌نام و بدون اینکه دیتات تموم شه.</p><div className="game-pills"><span>● آفلاین بعد از بارگذاری</span><span>رکورد روی همین دستگاه</span><span>کوتاه بازی کن، بعداً ادامه بده</span></div></div><div className="game-shell"><aside className="game-library"><div><small>بازی‌های سبک</small><b>یکی رو انتخاب کن</b></div>{games.map((game) => <button key={game.id} className={active === game.id ? 'active' : ''} onClick={() => setActive(game.id)}><span>{game.icon}</span><div><b>{game.title}</b><small>{game.desc}</small></div><i>{game.time}</i></button>)}</aside><main className="game-stage"><header><div><span>{games.find((game) => game.id === active)?.icon}</span><div><small>NOW PLAYING</small><h2>{games.find((game) => game.id === active)?.title}</h2></div></div><b>صدای زنگ رو می‌شنوی؟ جمعش کن 😄</b></header>{active === '2048' && <Game2048 onScore={record2048}/>}{active === 'reaction' && <ReactionGame best={scores.reaction} onBest={(value) => { setBest('reaction', value); record('reaction',value) }}/>} {active === 'snake' && <Snake onScore={recordSnake}/>} {active === 'online' && <OnlineLobby/>} {active === 'xo' && <TicTacToe winsCount={scores.xoWins || 0} onWin={() => setScores((prev) => ({ ...prev, xoWins: (prev.xoWins || 0) + 1 }))}/>}</main></div><div className="arcade-player"><label>نام روی تابلوی رکورد<input value={playerName} maxLength={32} onChange={(e)=>setPlayerName(e.target.value)} /></label></div><ArcadeBoard records={records}/></section>
 }
