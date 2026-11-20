@@ -1,0 +1,16 @@
+name: Check server setup script
+on:
+  push:
+    paths: ['deploy/**', '.github/workflows/check-server-setup.yml']
+  pull_request:
+    paths: ['deploy/**', '.github/workflows/check-server-setup.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash -n deploy/bootstrap-ubuntu.sh
+      - run: bash deploy/bootstrap-ubuntu.sh --check
+      - run: shellcheck deploy/bootstrap-ubuntu.sh
