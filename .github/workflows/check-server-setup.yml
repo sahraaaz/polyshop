@@ -17,3 +17,6 @@ jobs:
       - run: bash -n deploy/install-preview.sh
       - run: bash deploy/install-preview.sh --check
       - run: shellcheck deploy/install-preview.sh
+      - run: bash -n deploy/install-live.sh
+      - run: bash deploy/install-live.sh --check
+      - run: shellcheck deploy/install-live.sh
