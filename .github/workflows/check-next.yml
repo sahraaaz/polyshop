@@ -1,0 +1,31 @@
+name: Check Next.js migration
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  next:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      SITE_INDEXABLE: 'false'
+      CHECKOUT_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check:next
+      - run: npm run test
+      - run: npm run build:next
+        env:
+          SITE_INDEXABLE: 'false'
+      - run: npm run typecheck
+      - run: npm run test:next
+        env:
+          SITE_INDEXABLE: 'false'
+      - run: npm run test:browser

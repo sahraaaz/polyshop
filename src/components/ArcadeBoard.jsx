@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-export const arcadeApi = import.meta.env.VITE_ARCADE_API || ''
+export const arcadeApi = process.env.NEXT_PUBLIC_ARCADE_API || ''
 export async function arcadeRequest(path, data) {
   if (!arcadeApi) throw new Error('سرور بازی هنوز متصل نیست')
   const response = await fetch(`${arcadeApi}${path}`, { method: data ? 'POST' : 'GET', headers: {'Content-Type':'application/json'}, body: data ? JSON.stringify(data) : undefined })

@@ -14,3 +14,16 @@ jobs:
       - run: bash -n deploy/bootstrap-ubuntu.sh
       - run: bash deploy/bootstrap-ubuntu.sh --check
       - run: shellcheck deploy/bootstrap-ubuntu.sh
+      - run: bash -n deploy/install-preview.sh
+      - run: bash deploy/install-preview.sh --check
+      - run: shellcheck deploy/install-preview.sh
+      - run: bash -n deploy/install-live.sh
+      - run: bash deploy/install-live.sh --check
+      - run: shellcheck deploy/install-live.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: bash -n deploy/wait-for-app.sh
+      - run: bash deploy/wait-for-app.sh --check
+      - run: shellcheck deploy/wait-for-app.sh
+      - run: node --test deploy/test-readiness.mjs

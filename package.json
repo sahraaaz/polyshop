@@ -6,13 +6,34 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "dev:next": "next dev --hostname 127.0.0.1",
+    "build:next": "node scripts/check-next-runtime.mjs --build && next build",
+    "start:next": "node scripts/check-next-runtime.mjs && next start --hostname 127.0.0.1",
+    "check:next": "node scripts/check-next-runtime.mjs --build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test src/components/game2048.test.js server/arcade.test.mjs server/catalog-store.test.mjs server/catalog-http.test.mjs server/admin-auth.test.mjs server/admin-http.test.mjs server/order-store.test.mjs server/checkout-http.test.mjs",
+    "test:catalog": "node --test server/catalog-store.test.mjs server/catalog-http.test.mjs",
+    "test:admin": "node --test server/admin-auth.test.mjs server/admin-http.test.mjs",
+    "test:orders": "node --test server/order-store.test.mjs",
+    "test:checkout": "node --test server/checkout-http.test.mjs",
+    "test:offline": "node --test src/components/game2048.test.js server/catalog-store.test.mjs server/catalog-http.test.mjs server/admin-auth.test.mjs server/admin-http.test.mjs server/order-store.test.mjs server/checkout-http.test.mjs",
+    "admin:hash": "node scripts/hash-admin-password.mjs",
+    "test:next": "node scripts/smoke-next.mjs && node scripts/smoke-next-flows.mjs",
+    "test:browser": "node scripts/smoke-browser.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "next": "16.4.6",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "vite": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "playwright-core": "1.65.1",
+    "typescript": "5.9.3"
+  }
 }

@@ -59,6 +59,9 @@ Read Certbot's account and agreement prompts yourself. Check renewal timers with
 
 ## Before opening sales
 
+The incremental Next.js implementation and validation steps are documented in
+`docs/next-migration.md`. Keep the nginx launch page until its checks pass.
+
 Implement the agreed Next.js/TypeScript storefront and server-side product,
 inventory and order storage. Add authenticated administration, server-controlled
 prices, payment request/verification, idempotent callbacks and stock accounting.
