@@ -11,3 +11,7 @@ out/
 *.tsbuildinfo
 .env*
 !.env.example
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

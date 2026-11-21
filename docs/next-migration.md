@@ -15,6 +15,11 @@ installation is incomplete and the Next build has **not** been verified. Do not
 use partially installed packages as evidence of a successful setup. The existing
 lockfile is intentionally preserved for the working Vite build.
 
+An offline installation was also attempted with lifecycle scripts, audit and
+funding requests disabled. It returned ENOTCACHED: the required Next.js package
+metadata is not available locally. No network installation was retried after
+the telemetry block.
+
 On a development machine with npm registry access:
 
 ```sh
@@ -39,6 +44,11 @@ five 2048 tests passed. The existing arcade integration test failed with local
 network EACCES on 127.0.0.1:3199. Next.js build, type checking and HTTP smoke checks
 remain pending dependency installation; syntax checks do not establish runtime
 or type correctness.
+
+The independent SQLite catalog foundation is documented in
+`docs/catalog-storage.md`. Its five persistence and validation tests, together
+with the five existing 2048 tests, passed without dependency installation. This
+storage layer is not yet wired into the storefront or product preview routes.
 
 ## Routes and behavior
 

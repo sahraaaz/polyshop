@@ -12,7 +12,8 @@
     "build:next": "next build",
     "start:next": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "node --test src/components/game2048.test.js server/arcade.test.mjs",
+    "test": "node --test src/components/game2048.test.js server/arcade.test.mjs server/catalog-store.test.mjs",
+    "test:catalog": "node --test server/catalog-store.test.mjs",
     "test:next": "node scripts/smoke-next.mjs"
   },
   "dependencies": {
