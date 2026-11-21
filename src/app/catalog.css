@@ -1,0 +1,13 @@
+.catalog-shell { max-width: 1120px; margin: 0 auto; padding: 40px 24px; min-height: 60vh; }
+.catalog-back { display: inline-block; color: var(--ink); margin-bottom: 24px; text-underline-offset: 5px; }
+.catalog-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.catalog-detail > img { width: 100%; height: auto; border-radius: 24px; }
+.catalog-detail h1 { font-size: clamp(28px, 4vw, 42px); line-height: 1.5; }
+.catalog-detail p { line-height: 2; }
+.catalog-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 12px; margin: 24px 0; }
+.catalog-detail dd { margin: 0; }
+.catalog-price { display: block; font-size: 28px; }
+.catalog-notice { padding: 16px; background: var(--turquoise-soft); border-radius: 12px; }
+.catalog-links { max-width: 1120px; margin: 32px auto; padding: 24px; border-top: 1px solid var(--ink); }
+.catalog-links a { display: inline-block; margin: 8px 0 8px 24px; color: var(--ink); }
+@media (max-width: 720px) { .catalog-detail { grid-template-columns: 1fr; gap: 24px; } }

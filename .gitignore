@@ -6,3 +6,8 @@ outputs
 *.log
 current-preview.png
 arcade-data/
+.next/
+out/
+*.tsbuildinfo
+.env*
+!.env.example

@@ -6,7 +6,14 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "setup:next": "npm install --save-exact next@16.4.6 && npm install --save-dev --save-exact typescript@5.9.3 @types/react@19 @types/react-dom@19 @types/node@22",
+    "dev:next": "next dev --hostname 127.0.0.1",
+    "build:next": "next build",
+    "start:next": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test src/components/game2048.test.js server/arcade.test.mjs",
+    "test:next": "node scripts/smoke-next.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
