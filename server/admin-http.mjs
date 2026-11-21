@@ -1,5 +1,5 @@
 import { readAdminConfig, verifyAdminPassword, SESSION_SECONDS } from './admin-auth.mjs'
-import { CatalogInputError, CatalogConflictError } from './catalog-store.mjs'
+import { CatalogInputError, CatalogConflictError, CatalogStockConflictError } from './catalog-store.mjs'
 
 const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
 const reply = (body, status = 200, extra = {}) => Response.json(body, { status, headers: { ...headers, ...extra } })
@@ -74,6 +74,22 @@ export function createAdminHandlers({ getAuthStore, getCatalogStore, config = re
         return reply({ products: getCatalogStore().listAdminProducts() })
       } catch { return failure() }
     },
+    orders(request) {
+      try {
+        if (!authorize(request, config())) return reply({ error: 'unauthorized' }, 401)
+        return reply({ orders: getCatalogStore().listAdminOrders() })
+      } catch { return failure() }
+    },
+    cancelOrder(request, id) {
+      try {
+        const settings = config()
+        if (!sameOrigin(request, settings)) return reply({ error: 'forbidden' }, 403)
+        if (!authorize(request, settings)) return reply({ error: 'unauthorized' }, 401)
+        if (typeof id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id)) return reply({ error: 'order_not_found' }, 404)
+        const order = getCatalogStore().cancelAdminOrder(id)
+        return order ? reply({ order }) : reply({ error: 'order_not_found' }, 404)
+      } catch { return failure() }
+    },
     async save(request, id) {
       try {
         const settings = config()
@@ -81,7 +97,7 @@ export function createAdminHandlers({ getAuthStore, getCatalogStore, config = re
         if (!authorize(request, settings)) return reply({ error: 'unauthorized' }, 401)
         if (id !== undefined && (typeof id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,99}$/.test(id))) return reply({ error: 'product_not_found' }, 404)
         const body = await readJson(request)
-        if (Object.keys(body).some(key => !editable.has(key) && !(id === undefined && key === 'id'))) return reply({ error: 'invalid_product' }, 400)
+        if (Object.keys(body).some(key => !editable.has(key) && !(id === undefined && key === 'id') && !(id !== undefined && key === 'expectedStock'))) return reply({ error: 'invalid_product' }, 400)
         const store = getCatalogStore()
         if (id === undefined) {
           const product = { ...body, source: 'official' }
@@ -90,10 +106,14 @@ export function createAdminHandlers({ getAuthStore, getCatalogStore, config = re
         }
         const current = store.getAdminProduct(id)
         if (!current) return reply({ error: 'product_not_found' }, 404)
-        const product = { ...current, ...body, id, source: 'official' }
-        store.updateProduct(product)
+        const { expectedStock, ...changes } = body
+        if ('stock' in changes && (!Number.isSafeInteger(expectedStock) || expectedStock < 0)) return reply({ error: 'invalid_product' }, 400)
+        if (expectedStock !== undefined && expectedStock !== current.stock) throw new CatalogStockConflictError('Inventory changed')
+        const product = { ...current, ...changes, id, source: 'official' }
+        store.updateProduct(product, current.stock)
         return reply({ product: store.getAdminProduct(id) })
       } catch (error) {
+        if (error instanceof CatalogStockConflictError) return reply({ error: 'inventory_changed' }, 409)
         if (error instanceof CatalogConflictError) return reply({ error: 'product_exists' }, 409)
         if (error instanceof CatalogInputError || error instanceof BadRequest) return reply({ error: 'invalid_product' }, 400)
         return failure()

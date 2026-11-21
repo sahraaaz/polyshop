@@ -1,11 +1,13 @@
 import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
+import { createOrderStorage } from './order-store.mjs'
 
 const statuses = new Set(['approved', 'pending', 'archived'])
 
 export class CatalogInputError extends Error {}
 export class CatalogConflictError extends Error {}
+export class CatalogStockConflictError extends CatalogConflictError {}
 
 function validateProduct(product) {
   if (!product || typeof product.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,99}$/.test(product.id)) throw new CatalogInputError('Invalid product id')
@@ -24,7 +26,7 @@ const fields = ['id', 'title', 'subtitle', 'category', 'price', 'stock', 'color'
 const columns = fields.join(', ')
 
 /** Internal catalog storage. Do not expose write methods without server authentication. */
-export function openCatalogStore({ filename, seed = [] }) {
+export function openCatalogStore({ filename, seed = [], now = Date.now }) {
   if (typeof filename !== 'string' || !filename) throw new Error('Database filename is required')
   // Validate the whole batch before creating or modifying persistent state.
   seed.forEach(validateProduct)
@@ -69,13 +71,17 @@ export function openCatalogStore({ filename, seed = [] }) {
     const byId = db.prepare(`SELECT ${columns} FROM catalog_products WHERE id = ?`)
     const create = db.prepare(`INSERT INTO catalog_products (${columns}) VALUES (${fields.map(() => '?').join(', ')})`)
     const audit = db.prepare('INSERT INTO catalog_audit (product_id, action, before_json, after_json, created_at) VALUES (?, ?, ?, ?, ?)')
-    function saveProduct(product, creating) {
+    const orders = createOrderStorage(db, now)
+    function saveProduct(product, creating, expectedStock) {
       validateProduct(product)
       db.exec('BEGIN IMMEDIATE')
       try {
         const before = byId.get(product.id)
         if (creating && before) throw new CatalogConflictError('Product already exists')
         if (!creating && !before) throw new CatalogInputError('Product not found')
+        if (!creating && expectedStock !== undefined && before.stock !== expectedStock) throw new CatalogStockConflictError('Inventory changed; reload before editing')
+        const held = db.prepare("SELECT COALESCE(SUM(i.quantity), 0) AS quantity FROM shop_order_items i JOIN shop_orders o ON o.id = i.order_id WHERE i.product_id = ? AND o.status = 'pending_payment'").get(product.id).quantity
+        if (BigInt(product.stock) + BigInt(held) > BigInt(Number.MAX_SAFE_INTEGER)) throw new CatalogInputError('Stock exceeds supported amount')
         if (creating) create.run(...fields.map(field => product[field]))
         else update.run(...fields.slice(1).map(field => product[field]), product.id)
         audit.run(product.id, creating ? 'create' : 'update', before ? JSON.stringify(before) : null, JSON.stringify(product), Date.now())
@@ -83,18 +89,20 @@ export function openCatalogStore({ filename, seed = [] }) {
       } catch (error) { db.exec('ROLLBACK'); throw error }
     }
     return {
-      listAdminProducts: () => all.all().map(row => ({ ...row })),
-      getAdminProduct: id => { const row = byId.get(id); return row ? { ...row } : null },
+      ...orders,
+      listAdminProducts: () => { orders.expireReservations(); return all.all().map(row => ({ ...row })) },
+      getAdminProduct: id => { orders.expireReservations(); const row = byId.get(id); return row ? { ...row } : null },
       listAudit: () => db.prepare('SELECT * FROM catalog_audit ORDER BY id DESC LIMIT 100').all().map(row => ({ ...row })),
-      listPublicProducts: () => publicList.all().map(row => ({ ...row })),
+      listPublicProducts: () => { orders.expireReservations(); return publicList.all().map(row => ({ ...row })) },
       getPublicProduct: id => {
         if (typeof id !== 'string') return null
+        orders.expireReservations()
         const row = publicProduct.get(id)
         return row ? { ...row } : null
       },
       // This is intentionally internal; there is no public product mutation API.
-      updateProduct(product) {
-        saveProduct(product, false)
+      updateProduct(product, expectedStock = undefined) {
+        saveProduct(product, false, expectedStock)
       },
       createProduct: product => saveProduct(product, true),
       close: () => db.close(),

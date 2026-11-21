@@ -26,8 +26,9 @@ not cached; missing or hidden products return 404, and storage failures return a
 generic 503 with Retry-After. Product writes are restricted to the new
 authenticated administrator API; creation and edits write an audit record in
 the same transaction. See docs/admin-setup.md. The browser-local interactive
-demo is still independent. Customer identity, orders, reservation accounting
-and payments remain separate work.
+demo is still independent. Internal order reservations now share this database;
+see docs/order-reservations.md. Customer identity, public checkout and payments
+remain separate work.
 
 Run npm run test:catalog with Node 24 to verify persistence across restarts,
 moderation visibility, invalid input, schema versions, response behavior and the

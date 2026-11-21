@@ -12,9 +12,11 @@
     "build:next": "next build",
     "start:next": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "node --test src/components/game2048.test.js server/arcade.test.mjs server/catalog-store.test.mjs server/catalog-http.test.mjs server/admin-auth.test.mjs server/admin-http.test.mjs",
+    "test": "node --test src/components/game2048.test.js server/arcade.test.mjs server/catalog-store.test.mjs server/catalog-http.test.mjs server/admin-auth.test.mjs server/admin-http.test.mjs server/order-store.test.mjs",
     "test:catalog": "node --test server/catalog-store.test.mjs server/catalog-http.test.mjs",
     "test:admin": "node --test server/admin-auth.test.mjs server/admin-http.test.mjs",
+    "test:orders": "node --test server/order-store.test.mjs",
+    "test:offline": "node --test src/components/game2048.test.js server/catalog-store.test.mjs server/catalog-http.test.mjs server/admin-auth.test.mjs server/admin-http.test.mjs server/order-store.test.mjs",
     "admin:hash": "node scripts/hash-admin-password.mjs",
     "test:next": "node scripts/smoke-next.mjs"
   },

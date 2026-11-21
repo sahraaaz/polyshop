@@ -47,8 +47,10 @@ or type correctness.
 
 The SQLite catalog and its read API are documented in docs/catalog-storage.md.
 Product preview pages, the server-rendered home-page links and enabled sitemap
-now read that database per request. Sixteen directly runnable tests pass (five
-storage tests, six service/response/adapter tests, five existing 2048 tests).
+now read that database per request. The current npm run test:offline suite has
+43 passing tests across catalog storage, service responses, administrator access,
+order reservations and existing 2048 logic. All 26 TS/TSX files pass syntax
+transformation; that does not establish strict type or framework correctness.
 The browser-local interactive demo remains independent of the server catalog.
 
 Server-side administrator login and a product management page are now available
@@ -56,6 +58,11 @@ in the implementation at /admin. Configuration, security boundaries and tests
 are described in docs/admin-setup.md. The administrator must configure a private
 password hash before use; no credentials are shipped. The Next runtime and UI
 checks remain pending framework installation.
+
+Internal order reservations, authoritative line prices and release-once
+inventory accounting are documented in docs/order-reservations.md. They share
+the catalog transaction and are visible/cancellable through authenticated admin
+routes. No customer checkout or payment endpoint is enabled.
 
 ## Routes and behavior
 

@@ -12,4 +12,5 @@
 .admin-shell th, .admin-shell td { border-bottom: 1px solid var(--muted); padding: 12px; white-space: nowrap; }
 .admin-editor fieldset { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border: 0; padding: 0; }
 .admin-wide { grid-column: 1 / -1; }
+.admin-orders { margin-top: 48px; border-top: 1px solid var(--muted); padding-top: 24px; }
 @media (max-width: 640px) { .admin-editor fieldset { grid-template-columns: 1fr; } }

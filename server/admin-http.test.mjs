@@ -85,7 +85,7 @@ test('authenticated product edits persist and are recorded atomically in the aud
   try {
     const cookie = await login(handlers)
     const id = catalogSeed[0].id
-    const saved = await handlers.save(request('products', { method: 'PATCH', cookie, body: { price: 111000, stock: 3, status: 'archived' } }), id)
+    const saved = await handlers.save(request('products', { method: 'PATCH', cookie, body: { price: 111000, stock: 3, expectedStock: catalogSeed[0].stock, status: 'archived' } }), id)
     assert.equal(saved.status, 200)
     assert.equal(catalog.getPublicProduct(id), null)
     assert.equal(catalog.getAdminProduct(id).price, 111000)
@@ -93,7 +93,7 @@ test('authenticated product edits persist and are recorded atomically in the aud
     assert.equal(audit.action, 'update')
     assert.equal(JSON.parse(audit.after_json).stock, 3)
     assert.equal(JSON.parse(audit.before_json).stock, catalogSeed[0].stock)
-    const invalid = await handlers.save(request('products', { method: 'PATCH', cookie, body: { stock: -1 } }), id)
+    const invalid = await handlers.save(request('products', { method: 'PATCH', cookie, body: { stock: -1, expectedStock: 3 } }), id)
     assert.equal(invalid.status, 400)
     assert.equal(catalog.listAudit().length, 1)
     const listing = await handlers.products(request('products', { cookie })).json()
@@ -145,5 +145,65 @@ test('unconfigured administrator returns generic 503 without exposing internal e
     const response = await handlers.login(request('login', { method: 'POST', body: { password } }))
     assert.equal(response.status, 503)
     assert.deepEqual(await response.json(), { error: 'service_unavailable' })
+  } finally { close() }
+})
+
+test('order access requires authentication and cancellation requires the configured origin', async () => {
+  const { handlers, catalog, close } = setup()
+  try {
+    const order = catalog.reserveOrder({ items: [{ productId: catalogSeed[0].id, quantity: 1 }], ownerKey: 'admin-order-owner-0001', idempotencyKey: 'admin-order-key-0001' })
+    assert.equal(handlers.orders(request('orders')).status, 401)
+    assert.equal(handlers.cancelOrder(request('orders', { method: 'POST' }), order.id).status, 401)
+    const cookie = await login(handlers)
+    assert.equal(handlers.cancelOrder(request('orders', { method: 'POST', cookie, from: 'https://attacker.example' }), order.id).status, 403)
+    assert.equal(catalog.listAdminOrders()[0].status, 'pending_payment')
+  } finally { close() }
+})
+
+test('administrator lists orders and cancels a reservation without restoring stock twice', async () => {
+  const { handlers, catalog, close } = setup()
+  try {
+    const product = catalogSeed[0]
+    const order = catalog.reserveOrder({ items: [{ productId: product.id, quantity: 2 }], ownerKey: 'admin-order-owner-0001', idempotencyKey: 'admin-order-key-0001' })
+    const cookie = await login(handlers)
+    const listing = handlers.orders(request('orders', { cookie }))
+    assert.equal(listing.status, 200)
+    assert.equal((await listing.json()).orders[0].id, order.id)
+    for (let i = 0; i < 2; i++) {
+      const cancelled = handlers.cancelOrder(request('orders', { method: 'POST', cookie }), order.id)
+      assert.equal(cancelled.status, 200)
+      assert.equal((await cancelled.json()).order.status, 'cancelled')
+    }
+    assert.equal(catalog.getPublicProduct(product.id).stock, product.stock)
+    assert.equal(catalog.listOrderEvents(order.id).length, 2)
+    assert.equal(handlers.cancelOrder(request('orders', { method: 'POST', cookie }), '00000000-0000-0000-0000-000000000000').status, 404)
+    assert.equal(handlers.cancelOrder(request('orders', { method: 'POST', cookie }), '../invalid').status, 404)
+  } finally { close() }
+})
+
+test('order database failures return generic service errors', async () => {
+  const { handlers, close } = setup({ getCatalogStore: () => { throw new Error('private-db-path') } })
+  try {
+    const cookie = await login(handlers)
+    for (const response of [handlers.orders(request('orders', { cookie })), handlers.cancelOrder(request('orders', { method: 'POST', cookie }), '00000000-0000-0000-0000-000000000000')]) {
+      assert.equal(response.status, 503)
+      assert.deepEqual(await response.json(), { error: 'service_unavailable' })
+    }
+  } finally { close() }
+})
+
+test('stale admin edits cannot overwrite stock reserved by an intervening order', async () => {
+  const { handlers, catalog, close } = setup()
+  try {
+    const original = catalogSeed[0]
+    const cookie = await login(handlers)
+    catalog.reserveOrder({ items: [{ productId: original.id, quantity: 1 }], ownerKey: 'admin-order-owner-0001', idempotencyKey: 'admin-order-key-0001' })
+    const stale = await handlers.save(request('products', { method: 'PATCH', cookie, body: { price: 100000, stock: original.stock, expectedStock: original.stock } }), original.id)
+    assert.equal(stale.status, 409)
+    assert.deepEqual(await stale.json(), { error: 'inventory_changed' })
+    assert.equal(catalog.getPublicProduct(original.id).stock, original.stock - 1)
+    assert.equal(catalog.listAudit().length, 0)
+    const fresh = await handlers.save(request('products', { method: 'PATCH', cookie, body: { price: 100000, stock: original.stock - 1, expectedStock: original.stock - 1 } }), original.id)
+    assert.equal(fresh.status, 200)
   } finally { close() }
 })

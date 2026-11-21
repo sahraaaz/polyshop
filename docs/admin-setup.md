@@ -49,6 +49,10 @@ administrator, without account recovery, multiple roles or multifactor login.
 Supported: create a product, edit its text/price/stock/discount, and change its
 status between pending, approved and archived. Product images reference existing
 JPG files under public/products; upload and image processing are not implemented.
+The panel also lists the latest 100 internal order reservations and can cancel
+pending reservations to release inventory. See docs/order-reservations.md.
+Stock is available-to-sell inventory after active holds. Updates carry the loaded
+expected stock, and stale edits are rejected instead of restoring held units.
 The old browser-local demo storefront remains independent, while server product
 previews and the public API reflect authenticated changes immediately.
 
