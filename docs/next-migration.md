@@ -25,6 +25,7 @@ On a development machine with npm registry access:
 ```sh
 npm ci
 npm run setup:next
+npm run check:next
 npm run test
 npm run build:next
 npm run typecheck
@@ -37,6 +38,14 @@ and updates package-lock.json. Commit both generated manifest changes after the
 checks pass. Then CI can use npm ci without the temporary setup step. Do not run
 the setup command in the live web root. Next.js requires a Node.js server; the
 GitHub Pages workflow continues to publish only the existing Vite preview.
+
+The offline check:next preflight checks Node 24, built-in SQLite, readable package
+metadata/entry points, matching React versions, TypeScript development packages,
+and a Next.js version declared consistently in the manifest and lockfile. The
+Next build/start scripts refuse a partial or unlocked installation. This is only
+a prerequisite check; passing it does not verify types or framework behavior.
+The manual CI workflow remains undispatched while installation authorization is
+unresolved. Do not use a remote run as a workaround for the rejected connection.
 
 Validation performed on the development host: the existing Vite production build
 passed, all eleven new TypeScript/TSX files passed syntax transformation, and all

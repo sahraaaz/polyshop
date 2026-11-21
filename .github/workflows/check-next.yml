@@ -15,6 +15,7 @@ jobs:
       - run: npm ci
       # Temporary bootstrap until its generated lockfile can be committed.
       - run: npm run setup:next
+      - run: npm run check:next
       - run: npm run test
       - run: npm run build:next
         env:
