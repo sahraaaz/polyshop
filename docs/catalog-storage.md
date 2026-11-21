@@ -14,11 +14,21 @@ The database path must come from trusted server configuration, outside the
 public web root. Production file permissions, backups and restore verification
 must be configured before use. Database files and WAL sidecars are gitignored.
 
-This is an internal foundation only. It is not yet wired into the Next.js product
-previews or the existing browser-local demo. No public mutation API is exposed;
-`updateProduct` must only be called by a future authenticated server layer.
-Orders, reservation accounting, authentication and payments remain separate work.
+The Next.js product previews, home-page product links and enabled sitemap now
+read this database per request. The initial nine official records come from
+`src/data/catalog-seed.js`. `server/catalog-service.mjs` opens one lazy connection
+per process and rejects paths inside static asset and build directories. Set
+POLYMOLY_DATABASE_FILE to a persistent absolute path in production; the default
+is data/polymoly.sqlite relative to the service working directory.
 
-Run `npm run test:catalog` to verify persistence across restarts, moderation
-visibility, invalid-input rejection and schema-version handling without network
-access or installing dependencies.
+GET /api/products and GET /api/products/[slug] use the same store. Responses are
+not cached; missing or hidden products return 404, and storage failures return a
+generic 503 with Retry-After. No public mutation API is exposed; updateProduct
+must only be called by a future authenticated server layer. The browser-local
+interactive demo is still independent. Orders, reservation accounting,
+authentication and payments remain separate work.
+
+Run npm run test:catalog with Node 24 to verify persistence across restarts,
+moderation visibility, invalid input, schema versions, response behavior and the
+typed data adapter without network access or installing dependencies. Next.js
+runtime smoke tests remain pending installation of the framework itself.

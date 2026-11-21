@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const require = createRequire(import.meta.url)
+const nextBin = require.resolve('next/dist/bin/next')
 const port = '3187'
 const origin = `http://127.0.0.1:${port}`
-const server = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'start', '--hostname', '127.0.0.1', '--port', port], {
-  env: { ...process.env, SITE_INDEXABLE: 'false' },
+const directory = mkdtempSync(join(tmpdir(), 'polymoly-next-'))
+const server = spawn(process.execPath, [nextBin, 'start', '--hostname', '127.0.0.1', '--port', port], {
+  env: { ...process.env, SITE_INDEXABLE: 'false', POLYMOLY_DATABASE_FILE: join(directory, 'catalog.sqlite'), NEXT_TELEMETRY_DISABLED: '1' },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
 let output = ''
@@ -31,6 +36,10 @@ try {
   assert.match(html, /noindex/)
   const slugs = [...new Set([...html.matchAll(/href="\/products\/([^"?#]+)"/g)].map(match => match[1]))]
   assert.equal(slugs.length, 9, 'All official products must have server-rendered links')
+  const api = await fetch(`${origin}/api/products`)
+  assert.equal(api.status, 200)
+  assert.equal(api.headers.get('cache-control'), 'no-store')
+  assert.equal((await api.json()).products.length, 9)
   for (const slug of slugs) {
     const response = await fetch(`${origin}/products/${slug}`)
     assert.equal(response.status, 200, slug)
@@ -40,8 +49,13 @@ try {
     const image = productHtml.match(/src="(\/products\/[^"?]+\.jpg)"/)
     assert.ok(image, `Product image missing: ${slug}`)
     assert.equal((await fetch(`${origin}${image[1]}`)).status, 200)
+    const detail = await fetch(`${origin}/api/products/${slug}`)
+    assert.equal(detail.status, 200)
+    assert.equal((await detail.json()).product.id, slug)
   }
   assert.equal((await fetch(`${origin}/products/not-a-product`)).status, 404)
+  assert.equal((await fetch(`${origin}/api/products/not-a-product`)).status, 404)
+  assert.equal((await fetch(`${origin}/api/products`, { method: 'POST' })).status, 405)
   assert.deepEqual(await (await fetch(`${origin}/healthz`)).json(), { status: 'ok', service: 'polymoly' })
   assert.match(await (await fetch(`${origin}/robots.txt`)).text(), /Disallow: \//)
   assert.doesNotMatch(await (await fetch(`${origin}/sitemap.xml`)).text(), /<loc>/)
@@ -50,5 +64,8 @@ try {
   console.error(output)
   throw error
 } finally {
+  const stopped = new Promise(resolve => server.once('close', resolve))
   server.kill()
+  if (server.exitCode === null) await stopped
+  rmSync(directory, { recursive: true, force: true })
 }

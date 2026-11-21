@@ -1,4 +1,4 @@
-import { products } from '../data/products'
+import { getCatalogStore } from '../../server/catalog-service.mjs'
 
 export interface CatalogProduct {
   id: string
@@ -15,21 +15,20 @@ export interface CatalogProduct {
   image: string
 }
 
-const images: Record<string, string> = {
-  'tee-amirkabir-1401': 'amirkabir-1401-product.jpg',
-  'tee-engineer-pear': 'engineer-pear-shirt-v2.jpg',
-  'tee-chaos': 'poly-tee.jpg',
-  'tee-deadline': 'poly-tee.jpg',
-  'hoodie-night': 'poly-hoodie.jpg',
-  'pixel-ie': 'poly-accessories.jpg',
-  'tote-campus': 'poly-accessories.jpg',
-  'service-poster': 'poster-service.jpg',
-  'service-cv': 'student-study.jpg',
+function toProduct(row: Record<string, unknown>): CatalogProduct {
+  return {
+    id: String(row.id), title: String(row.title), subtitle: String(row.subtitle),
+    category: String(row.category), price: Number(row.price), stock: Number(row.stock),
+    color: String(row.color), blurb: String(row.blurb), source: String(row.source),
+    status: String(row.status), discount: Number(row.discount), image: String(row.image),
+  }
 }
 
-// Deliberately excludes browser-local listings and unmoderated student products.
-export const publicProducts: CatalogProduct[] = products
-  .filter(product => product.source === 'official' && product.status === 'approved')
-  .map(product => ({ ...product, image: `/products/${images[product.id] || 'poly-accessories.jpg'}` }))
+export function listPublicProducts(): CatalogProduct[] {
+  return getCatalogStore().listPublicProducts().map(toProduct)
+}
 
-export const findProduct = (id: string) => publicProducts.find(product => product.id === id)
+export function findProduct(id: string): CatalogProduct | null {
+  const row = getCatalogStore().getPublicProduct(id)
+  return row ? toProduct(row) : null
+}

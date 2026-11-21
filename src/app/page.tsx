@@ -1,11 +1,15 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import Storefront from './storefront'
-import { publicProducts } from '../lib/catalog'
+import { listPublicProducts } from '../lib/catalog'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = { alternates: { canonical: '/' } }
 
 export default function Home() {
+  const publicProducts = listPublicProducts()
   return <>
     <Storefront />
     <nav className="catalog-links" aria-label="صفحه‌های محصولات Polyshop">

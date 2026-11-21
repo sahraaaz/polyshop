@@ -45,10 +45,11 @@ network EACCES on 127.0.0.1:3199. Next.js build, type checking and HTTP smoke ch
 remain pending dependency installation; syntax checks do not establish runtime
 or type correctness.
 
-The independent SQLite catalog foundation is documented in
-`docs/catalog-storage.md`. Its five persistence and validation tests, together
-with the five existing 2048 tests, passed without dependency installation. This
-storage layer is not yet wired into the storefront or product preview routes.
+The SQLite catalog and its read API are documented in docs/catalog-storage.md.
+Product preview pages, the server-rendered home-page links and enabled sitemap
+now read that database per request. Sixteen directly runnable tests pass (five
+storage tests, six service/response/adapter tests, five existing 2048 tests).
+The browser-local interactive demo remains independent of the server catalog.
 
 ## Routes and behavior
 
@@ -56,6 +57,8 @@ storage layer is not yet wired into the storefront or product preview routes.
 - `/products/[slug]`: nine official product previews, rendered on the server,
   with title, description, image and canonical URL. Unknown products return 404.
 - `/healthz`: application health response.
+- `/api/products` and `/api/products/[slug]`: read-only database-backed catalog,
+  uncached responses, 404 for missing/hidden products, sanitized 503 on failures.
 - `/robots.txt` and `/sitemap.xml`: closed to indexing by default. Set
   SITE_INDEXABLE=true **at build time**, rebuild and redeploy only after launch
   review. Products currently use demo prices; no payment offers are published.
@@ -65,6 +68,10 @@ replaces VITE_ARCADE_API for Next.js; Vite accepts either during migration.
 Public environment values are embedded at build time and must contain no secrets.
 
 ## Deployment boundary
+
+Use Node 24 LTS for the database-backed routes. Configure
+POLYMOLY_DATABASE_FILE to a persistent absolute path outside the release and
+public directories so new deployments retain the same catalog database.
 
 Keep the current nginx launch page and TLS configuration until checks pass.
 Prepare a separate release directory, build it there, run Next as an unprivileged

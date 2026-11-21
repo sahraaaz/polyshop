@@ -1,18 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { findProduct, publicProducts } from '../../../lib/catalog'
+import { findProduct } from '../../../lib/catalog'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 type Props = { params: Promise<{ slug: string }> }
-
-export function generateStaticParams() {
-  return publicProducts.map(product => ({ slug: product.id }))
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const product = findProduct(slug)
-  if (!product) return {}
+  if (!product) notFound()
   return {
     title: product.title,
     description: product.blurb,
