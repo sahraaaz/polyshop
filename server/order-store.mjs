@@ -24,7 +24,7 @@ function validateRequest(input) {
 }
 
 // Shares the catalog connection so inventory and reservations commit atomically.
-// This is an internal domain API; there is no public checkout endpoint yet.
+// HTTP callers must supply an owner derived from a valid server session.
 export function createOrderStorage(db, now = Date.now) {
   db.exec(`CREATE TABLE IF NOT EXISTS shop_orders (
     id TEXT PRIMARY KEY, owner_hash TEXT NOT NULL, idempotency_key TEXT NOT NULL,
@@ -76,7 +76,7 @@ export function createOrderStorage(db, now = Date.now) {
 
   return {
     expireReservations,
-    reserveOrder(input) {
+    reserveOrder(input, maxPending = Infinity) {
       const request = validateRequest(input)
       return transaction(() => {
         const timestamp = now()
@@ -86,6 +86,8 @@ export function createOrderStorage(db, now = Date.now) {
           if (existing.request_hash !== request.requestHash) throw new OrderConflictError('Idempotency key was already used for another cart')
           return view(existing)
         }
+        const active = db.prepare("SELECT COUNT(*) AS count FROM shop_orders WHERE owner_hash = ? AND status = 'pending_payment'").get(request.owner).count
+        if (active >= maxPending) throw new OrderConflictError('A reservation is already pending')
         const prepared = []; let total = 0n
         for (const item of request.items) {
           const product = db.prepare("SELECT * FROM catalog_products WHERE id = ? AND status = 'approved'").get(item.productId)
@@ -110,6 +112,11 @@ export function createOrderStorage(db, now = Date.now) {
       expireReservations()
       return view(db.prepare('SELECT * FROM shop_orders WHERE id = ? AND owner_hash = ?').get(id, owner))
     },
+    getActiveOwnedOrder(ownerKey) {
+      const owner = ownerHash(ownerKey)
+      expireReservations()
+      return view(db.prepare("SELECT * FROM shop_orders WHERE owner_hash = ? AND status = 'pending_payment' ORDER BY created_at DESC, rowid DESC LIMIT 1").get(owner))
+    },
     listAdminOrders() {
       expireReservations()
       return db.prepare('SELECT * FROM shop_orders ORDER BY created_at DESC, rowid DESC LIMIT 100').all().map(view)
@@ -119,6 +126,16 @@ export function createOrderStorage(db, now = Date.now) {
         const timestamp = now()
         expireInternal(timestamp)
         const order = orderById.get(id)
+        if (!order) return null
+        release(order, 'cancelled', timestamp)
+        return view(orderById.get(id))
+      })
+    },
+    cancelOwnedOrder(id, ownerKey) {
+      const owner = ownerHash(ownerKey)
+      return transaction(() => {
+        const timestamp = now(); expireInternal(timestamp)
+        const order = db.prepare('SELECT * FROM shop_orders WHERE id = ? AND owner_hash = ?').get(id, owner)
         if (!order) return null
         release(order, 'cancelled', timestamp)
         return view(orderById.get(id))

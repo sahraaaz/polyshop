@@ -48,8 +48,8 @@ or type correctness.
 The SQLite catalog and its read API are documented in docs/catalog-storage.md.
 Product preview pages, the server-rendered home-page links and enabled sitemap
 now read that database per request. The current npm run test:offline suite has
-43 passing tests across catalog storage, service responses, administrator access,
-order reservations and existing 2048 logic. All 26 TS/TSX files pass syntax
+53 passing tests across catalog storage, service responses, administrator access,
+order reservations, guest checkout and existing 2048 logic. All 34 TS/TSX files pass syntax
 transformation; that does not establish strict type or framework correctness.
 The browser-local interactive demo remains independent of the server catalog.
 
@@ -62,7 +62,9 @@ checks remain pending framework installation.
 Internal order reservations, authoritative line prices and release-once
 inventory accounting are documented in docs/order-reservations.md. They share
 the catalog transaction and are visible/cancellable through authenticated admin
-routes. No customer checkout or payment endpoint is enabled.
+routes. A guest reservation preview now exists at /checkout with owner-scoped
+read/cancel endpoints, but defaults closed through CHECKOUT_ENABLED=false.
+See docs/guest-checkout.md. Payments remain unimplemented.
 
 ## Routes and behavior
 

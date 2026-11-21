@@ -31,9 +31,10 @@ the final comparison is performed inside the product write transaction.
 GET /api/admin/orders lists the latest 100 orders, including their item snapshots.
 POST /api/admin/orders/[id]/cancel requires both a valid admin session and exact
 Origin match. The admin panel lists orders and offers an explicit cancellation
-confirmation. Customer order creation, contact/address collection, shipping,
-payment initiation/verification and paid/fulfilled status transitions are not
-implemented or publicly exposed. No UI or API can mark these reservations paid.
+confirmation. A guest reservation preview now exists behind a default-closed
+launch flag; see docs/guest-checkout.md. Contact/address collection, shipping,
+payment initiation/verification and paid/fulfilled transitions remain absent.
+No UI or API can mark these reservations paid.
 
 The current storefront remains a separate local demo. Do not open real checkout
 until its customer session, anti-abuse limits, gateway verification and failure

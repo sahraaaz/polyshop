@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { createOrderStorage } from './order-store.mjs'
+import { createGuestStorage } from './guest-store.mjs'
 
 const statuses = new Set(['approved', 'pending', 'archived'])
 
@@ -72,6 +73,7 @@ export function openCatalogStore({ filename, seed = [], now = Date.now }) {
     const create = db.prepare(`INSERT INTO catalog_products (${columns}) VALUES (${fields.map(() => '?').join(', ')})`)
     const audit = db.prepare('INSERT INTO catalog_audit (product_id, action, before_json, after_json, created_at) VALUES (?, ?, ?, ?, ?)')
     const orders = createOrderStorage(db, now)
+    const guests = createGuestStorage(db, now)
     function saveProduct(product, creating, expectedStock) {
       validateProduct(product)
       db.exec('BEGIN IMMEDIATE')
@@ -90,6 +92,7 @@ export function openCatalogStore({ filename, seed = [], now = Date.now }) {
     }
     return {
       ...orders,
+      ...guests,
       listAdminProducts: () => { orders.expireReservations(); return all.all().map(row => ({ ...row })) },
       getAdminProduct: id => { orders.expireReservations(); const row = byId.get(id); return row ? { ...row } : null },
       listAudit: () => db.prepare('SELECT * FROM catalog_audit ORDER BY id DESC LIMIT 100').all().map(row => ({ ...row })),
