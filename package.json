@@ -7,7 +7,6 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "setup:next": "npm install --save-exact next@16.4.6 && npm install --save-dev --save-exact typescript@5.9.3 @types/react@19 @types/react-dom@19 @types/node@22",
     "dev:next": "next dev --hostname 127.0.0.1",
     "build:next": "node scripts/check-next-runtime.mjs --build && next build",
     "start:next": "node scripts/check-next-runtime.mjs && next start --hostname 127.0.0.1",
@@ -20,13 +19,21 @@
     "test:checkout": "node --test server/checkout-http.test.mjs",
     "test:offline": "node --test src/components/game2048.test.js server/catalog-store.test.mjs server/catalog-http.test.mjs server/admin-auth.test.mjs server/admin-http.test.mjs server/order-store.test.mjs server/checkout-http.test.mjs",
     "admin:hash": "node scripts/hash-admin-password.mjs",
-    "test:next": "node scripts/smoke-next.mjs"
+    "test:next": "node scripts/smoke-next.mjs && node scripts/smoke-next-flows.mjs",
+    "test:browser": "node scripts/smoke-browser.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "next": "16.4.6",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "vite": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "playwright-core": "1.65.1",
+    "typescript": "5.9.3"
+  }
 }

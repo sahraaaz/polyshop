@@ -32,5 +32,5 @@ remain separate work.
 
 Run npm run test:catalog with Node 24 to verify persistence across restarts,
 moderation visibility, invalid input, schema versions, response behavior and the
-typed data adapter without network access or installing dependencies. Next.js
-runtime smoke tests remain pending installation of the framework itself.
+typed data adapter without network access. Built Next HTTP and browser smoke
+tests now pass locally as documented in docs/next-migration.md.

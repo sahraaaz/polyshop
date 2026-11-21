@@ -33,5 +33,7 @@ Guest identities are anonymous sessions, not verified customer accounts.
 
 npm run test:checkout covers launch gating, session cookies, origin/ownership,
 price/owner injection, expiry, limits, idempotency, active receipt recovery and
-database restart. These exercise actual Request/Response handlers, not Next
-route dispatch or the browser UI, which remain pending framework installation.
+database restart. Built Next HTTP tests also verify the real route dispatch and
+the browser test covers cart creation, receipt reload/recovery and cancellation
+over disposable localhost HTTPS. All have passed locally; Linux/server staging
+validation and launch review remain separate. The launch flag stays false.

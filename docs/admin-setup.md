@@ -66,8 +66,8 @@ this patch. Restrict private environment files to the service administrator.
 
 Unit/integration checks for credentials, sessions, expiration, revocation,
 throttling, cross-origin rejection, product permissions and audit behavior run
-with npm run test:admin without installing packages. Full Next.js build,
-type-checking and browser testing remain blocked by incomplete framework
-installation. The UI and route wiring have not been runtime-verified in Next.
-Do not deploy, merge or use real sales until those checks and launch review pass.
+with npm run test:admin. Local strict type checking, production Next build,
+built-server HTTP flows and the actual browser admin form flow have passed.
+The browser test uses only disposable credentials and a fresh headless profile.
+Linux CI and a separate server staging/launch review precede public sales.
 No production administrator password was generated or configured in this work.
