@@ -11,7 +11,7 @@ const port = '3187'
 const origin = `http://127.0.0.1:${port}`
 const directory = mkdtempSync(join(tmpdir(), 'polymoly-next-'))
 const server = spawn(process.execPath, [nextBin, 'start', '--hostname', '127.0.0.1', '--port', port], {
-  env: { ...process.env, SITE_INDEXABLE: 'false', POLYMOLY_DATABASE_FILE: join(directory, 'catalog.sqlite'), NEXT_TELEMETRY_DISABLED: '1' },
+  env: { ...process.env, SITE_INDEXABLE: 'false', POLYMOLY_DATABASE_FILE: join(directory, 'catalog.sqlite'), NEXT_TELEMETRY_DISABLED: '1', ADMIN_PASSWORD_HASH: '' },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
 let output = ''
@@ -56,6 +56,10 @@ try {
   assert.equal((await fetch(`${origin}/products/not-a-product`)).status, 404)
   assert.equal((await fetch(`${origin}/api/products/not-a-product`)).status, 404)
   assert.equal((await fetch(`${origin}/api/products`, { method: 'POST' })).status, 405)
+  const admin = await fetch(`${origin}/admin`)
+  assert.equal(admin.status, 200)
+  assert.match(await admin.text(), /noindex/)
+  assert.equal((await fetch(`${origin}/api/admin/products`)).status, 503)
   assert.deepEqual(await (await fetch(`${origin}/healthz`)).json(), { status: 'ok', service: 'polymoly' })
   assert.match(await (await fetch(`${origin}/robots.txt`)).text(), /Disallow: \//)
   assert.doesNotMatch(await (await fetch(`${origin}/sitemap.xml`)).text(), /<loc>/)

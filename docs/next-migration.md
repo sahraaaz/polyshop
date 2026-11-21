@@ -51,6 +51,12 @@ now read that database per request. Sixteen directly runnable tests pass (five
 storage tests, six service/response/adapter tests, five existing 2048 tests).
 The browser-local interactive demo remains independent of the server catalog.
 
+Server-side administrator login and a product management page are now available
+in the implementation at /admin. Configuration, security boundaries and tests
+are described in docs/admin-setup.md. The administrator must configure a private
+password hash before use; no credentials are shipped. The Next runtime and UI
+checks remain pending framework installation.
+
 ## Routes and behavior
 
 - `/`: existing Polymoly UI, plus server-rendered links to the official catalog.
@@ -59,6 +65,8 @@ The browser-local interactive demo remains independent of the server catalog.
 - `/healthz`: application health response.
 - `/api/products` and `/api/products/[slug]`: read-only database-backed catalog,
   uncached responses, 404 for missing/hidden products, sanitized 503 on failures.
+- `/admin` and `/api/admin/*`: server-session administrator access and product
+  creation/editing; no indexing and no public write access.
 - `/robots.txt` and `/sitemap.xml`: closed to indexing by default. Set
   SITE_INDEXABLE=true **at build time**, rebuild and redeploy only after launch
   review. Products currently use demo prices; no payment offers are published.

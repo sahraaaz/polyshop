@@ -23,10 +23,11 @@ is data/polymoly.sqlite relative to the service working directory.
 
 GET /api/products and GET /api/products/[slug] use the same store. Responses are
 not cached; missing or hidden products return 404, and storage failures return a
-generic 503 with Retry-After. No public mutation API is exposed; updateProduct
-must only be called by a future authenticated server layer. The browser-local
-interactive demo is still independent. Orders, reservation accounting,
-authentication and payments remain separate work.
+generic 503 with Retry-After. Product writes are restricted to the new
+authenticated administrator API; creation and edits write an audit record in
+the same transaction. See docs/admin-setup.md. The browser-local interactive
+demo is still independent. Customer identity, orders, reservation accounting
+and payments remain separate work.
 
 Run npm run test:catalog with Node 24 to verify persistence across restarts,
 moderation visibility, invalid input, schema versions, response behavior and the
