@@ -14,3 +14,6 @@ jobs:
       - run: bash -n deploy/bootstrap-ubuntu.sh
       - run: bash deploy/bootstrap-ubuntu.sh --check
       - run: shellcheck deploy/bootstrap-ubuntu.sh
+      - run: bash -n deploy/install-preview.sh
+      - run: bash deploy/install-preview.sh --check
+      - run: shellcheck deploy/install-preview.sh
