@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url))
 const output = join(root, 'outputs')
 mkdirSync(output, { recursive: true })
 const archive = join(output, 'polymoly-live-source.tar.gz')
-const paths = ['package.json', 'package-lock.json', 'next.config.ts', 'next-env.d.ts', 'tsconfig.json', 'src', 'server', 'public', 'scripts', 'deploy/install-live.sh']
+const paths = ['package.json', 'package-lock.json', 'next.config.ts', 'next-env.d.ts', 'tsconfig.json', 'src', 'server', 'public', 'scripts', 'deploy/install-live.sh', 'deploy/wait-for-app.sh']
 for (const path of paths) if (!existsSync(join(root, path))) throw new Error(`Missing source: ${path}`)
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: 'inherit' })

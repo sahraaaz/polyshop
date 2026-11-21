@@ -46,8 +46,10 @@ cp -a "$site" "$backup/nginx.conf"
 if [[ -e $unit ]]; then cp -a "$unit" "$backup/service.unit"; fi
 nginx_changed=false
 switched=false
+stage='prepare application release'
 on_error() {
   status=$?
+  failed_line=${1:-unknown}
   trap - ERR
   if [[ $nginx_changed == true ]]; then
     cp -a "$backup/nginx.conf" "$site"
@@ -61,10 +63,10 @@ on_error() {
     systemctl daemon-reload || true
     systemctl restart polymoly-live.service || true
   elif [[ $switched == true ]]; then systemctl stop polymoly-live.service || true; fi
-  echo "Deployment stopped; inspect the backup at $backup. Preview was not changed." >&2
+  echo "Deployment stopped at stage: $stage (line $failed_line, exit $status). Inspect $backup. Preview was not changed." >&2
   exit "$status"
 }
-trap on_error ERR
+trap 'on_error "$LINENO"' ERR
 install -d -m 0755 "$root" "$root/releases" "$root/runtime"
 touch "$root/.managed"
 if ! getent passwd "$account" >/dev/null; then useradd --system --user-group --home-dir "$state" --no-create-home --shell /usr/sbin/nologin "$account"; fi
@@ -130,15 +132,13 @@ UNIT
 ln -s "$release" "$root/.current-$$"
 mv -Tf "$root/.current-$$" "$root/current"
 switched=true
+stage='start live application'
 systemctl daemon-reload
 systemctl enable polymoly-live.service
 systemctl restart polymoly-live.service
-healthy=false
-for _attempt in {1..30}; do
-  if curl --fail --silent --max-time 2 http://127.0.0.1:3210/healthz | grep -q '"status":"ok"'; then healthy=true; break; fi
-  sleep 1
-done
-[[ $healthy == true ]] || { echo 'App health check failed before nginx switch.' >&2; false; }
+stage='application readiness before nginx switch'
+bash "$source_root/deploy/wait-for-app.sh" "$node_bin/node" 'Direct application health' "$backup/direct-health" \
+  --noproxy '*' http://127.0.0.1:3210/healthz
 tls_extra='ssl_protocols TLSv1.2 TLSv1.3;'
 if [[ -f /etc/letsencrypt/options-ssl-nginx.conf ]]; then tls_extra='include /etc/letsencrypt/options-ssl-nginx.conf;'; fi
 dh_extra=''
@@ -193,13 +193,21 @@ server {
 }
 NGINX
 nginx_changed=true
+stage='validate and reload nginx'
 cp "$backup/new-nginx.conf" "$site"
 nginx -t
 systemctl reload nginx
-curl --fail --silent --show-error --max-time 15 --resolve polymoly.ir:443:127.0.0.1 https://polymoly.ir/healthz | grep -q '"status":"ok"'
-curl --fail --silent --show-error --max-time 30 --resolve polymoly.ir:443:127.0.0.1 https://polymoly.ir/ -o "$backup/home-check.html"
-curl --fail --silent --show-error --max-time 15 --resolve polymoly.ir:443:127.0.0.1 https://polymoly.ir/products/amirkabir-1401-product.jpg -o /dev/null
-curl --fail --silent --show-error --location --max-time 15 --resolve polymoly.ir:443:127.0.0.1 --resolve www.polymoly.ir:443:127.0.0.1 https://www.polymoly.ir/healthz | grep -q '"status":"ok"'
+stage='HTTPS application readiness after nginx reload'
+bash "$source_root/deploy/wait-for-app.sh" "$node_bin/node" 'Canonical HTTPS health' "$backup/https-health" \
+  --noproxy '*' --resolve polymoly.ir:443:127.0.0.1 https://polymoly.ir/healthz
+stage='public homepage check'
+curl --noproxy '*' --fail --silent --show-error --max-time 30 --resolve polymoly.ir:443:127.0.0.1 https://polymoly.ir/ -o "$backup/home-check.html"
+stage='public product image check'
+curl --noproxy '*' --fail --silent --show-error --max-time 15 --resolve polymoly.ir:443:127.0.0.1 https://polymoly.ir/products/amirkabir-1401-product.jpg -o /dev/null
+stage='www HTTPS redirect readiness'
+bash "$source_root/deploy/wait-for-app.sh" "$node_bin/node" 'www HTTPS health' "$backup/www-health" \
+  --noproxy '*' --location --resolve polymoly.ir:443:127.0.0.1 --resolve www.polymoly.ir:443:127.0.0.1 https://www.polymoly.ir/healthz
+stage='write manual rollback command'
 cat > "$backup/restore-nginx.sh" <<RESTORE
 #!/usr/bin/env bash
 set -euo pipefail

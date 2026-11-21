@@ -28,6 +28,11 @@ Before switching nginx, it backs up the current configuration under
 proxy, preserves the ACME challenge path and certificate files, redirects HTTP
 and www to https://polymoly.ir, limits login requests per client, checks nginx
 syntax, reloads and verifies HTTPS health/root HTML/an existing image/www.
+Readiness waits for the actual JSON application identity after graceful reload;
+the old launch page's plain ok response cannot cause success. Each readiness
+check retries up to 30 times and preserves its last body/curl error in the
+private deployment backup. Failures name their stage and source line before
+rollback, so a failed content check is distinguishable from TLS or proxy errors.
 The obsolete launch-page CSP is replaced with headers compatible with Next.js.
 
 On a checked deployment error it restores nginx and the previous live release
