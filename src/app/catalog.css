@@ -12,3 +12,26 @@
 .catalog-links { max-width: 1120px; margin: 32px auto; padding: 24px; border-top: 1px solid var(--ink); }
 .catalog-links a { display: inline-block; margin: 8px 0 8px 24px; color: var(--ink); }
 @media (max-width: 720px) { .catalog-detail { grid-template-columns: 1fr; gap: 24px; } }
+
+.shop-information { max-width: 800px; }
+.shop-information h1 { margin-top: 0; }
+.shop-information section { margin-block: 32px; }
+.shop-information p { line-height: 2; }
+.shop-information a, .shop-information-links a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.shop-contact-details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 12px 20px; }
+.shop-contact-details dt { font-weight: 700; }
+.shop-contact-details dd { margin: 0; overflow-wrap: anywhere; }
+.shop-information-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 24px;
+  padding: 16px 24px;
+  background: var(--surface);
+  border-top: 1px solid var(--ink);
+}
+.shop-information-links a { padding-block: 6px; }

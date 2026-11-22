@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { isIndexable, siteUrl } from '../lib/site'
@@ -24,5 +25,18 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: '#32d6c6' }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="fa" dir="rtl"><body>{process.env.CHECKOUT_ENABLED !== 'true' && <aside className="site-preview-notice">نسخهٔ آزمایشی — ثبت سفارش و پرداخت آنلاین هنوز فعال نیست.</aside>}<div id="root">{children}</div></body></html>
+  return (
+    <html lang="fa" dir="rtl">
+      <body>
+        {process.env.CHECKOUT_ENABLED !== 'true' && (
+          <aside className="site-preview-notice">نسخهٔ آزمایشی — ثبت سفارش و پرداخت آنلاین هنوز فعال نیست.</aside>
+        )}
+        <div id="root">{children}</div>
+        <nav className="shop-information-links" aria-label="اطلاعات فروشگاه">
+          <Link href="/store-policies">شرایط خرید، ارسال و مرجوعی</Link>
+          <Link href="/contact">تماس با ما</Link>
+        </nav>
+      </body>
+    </html>
+  )
 }
