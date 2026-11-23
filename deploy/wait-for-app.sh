@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wait for the actual application, including during a graceful nginx reload.
+# Wait for the actual application, including throughout a graceful nginx reload.
 set -euo pipefail
 if [[ ${1:-} == --check ]]; then echo 'Readiness checker loaded; no requests made.'; exit 0; fi
 [[ $# -ge 4 ]] || { echo 'Usage: wait-for-app.sh NODE LABEL OUTPUT_DIR CURL_ARGS...' >&2; exit 2; }

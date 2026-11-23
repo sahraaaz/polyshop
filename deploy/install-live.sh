@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Publish the tested app through existing HTTPS; preserve preview and application data.
+# Publish the tested app through existing HTTPS while preserving preview and application data.
 set -Eeuo pipefail
 if [[ ${1:-} == --check ]]; then printf 'Live installer loaded; no system changes made.\n'; exit 0; fi
+commit=${1:-}
+[[ $commit =~ ^[a-f0-9]{40}$ ]] || { echo 'Expected a Git commit SHA.' >&2; exit 1; }
 [[ $EUID -eq 0 ]] || { echo 'Run as root.' >&2; exit 1; }
 # shellcheck source=/dev/null
 source /etc/os-release
@@ -76,6 +78,7 @@ if [[ ! -d $root/runtime/$node_folder ]]; then cp -a "$preview_runtime" "$root/r
 node_bin="$root/runtime/$node_folder/bin"
 [[ $("$node_bin/node" --version) == v24.18.0 ]]
 release=$(mktemp -d "$root/releases/release-$(date -u +%Y%m%dT%H%M%SZ)-XXXXXX")
+printf '%s\n' "$commit" > "$release/REVISION"
 for path in package.json package-lock.json next.config.ts next-env.d.ts tsconfig.json src server public scripts; do cp -a "$source_root/$path" "$release/"; done
 chown -R "$account:$account" "$release"
 (

@@ -24,6 +24,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: '#32d6c6' }
 
+const enamadSealHtml = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8836836&Code=b5XkTiYvLVrABL3SbjICH95JBcEqgvh5'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8836836&Code=b5XkTiYvLVrABL3SbjICH95JBcEqgvh5' alt='' style='cursor:pointer' code='b5XkTiYvLVrABL3SbjICH95JBcEqgvh5'></a>"
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fa" dir="rtl">
@@ -35,6 +37,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <nav className="shop-information-links" aria-label="اطلاعات فروشگاه">
           <Link href="/store-policies">شرایط خرید، ارسال و مرجوعی</Link>
           <Link href="/contact">تماس با ما</Link>
+          <span className="enamad-seal" dangerouslySetInnerHTML={{ __html: enamadSealHtml }} />
         </nav>
       </body>
     </html>

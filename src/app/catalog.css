@@ -35,3 +35,4 @@
   border-top: 1px solid var(--ink);
 }
 .shop-information-links a { padding-block: 6px; }
+.enamad-seal { display: inline-flex; align-items: center; }

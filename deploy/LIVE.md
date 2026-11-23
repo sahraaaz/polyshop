@@ -1,9 +1,10 @@
 # Publish the public beta
 
-From PowerShell in the project folder run node deploy/live.mjs. The helper
-packages explicit source paths, rejects excluded/unsafe entries, uploads through
+From a clean Git checkout in PowerShell run `node deploy/live.mjs`. The helper
+packages explicit source paths from the current commit, rejects unsafe entries, uploads through
 SSH/SCP with strict existing host-key verification, verifies the archive digest
-and invokes install-live.sh. Enter credentials only in the terminal. No SSH
+and invokes install-live.sh. The active release records its commit in
+`/opt/polymoly-live/current/REVISION`. Enter credentials only in the terminal. No SSH
 tunnel is needed for the public domain, and closing the terminal will not stop
 the installed systemd service.
 
