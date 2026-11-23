@@ -128,12 +128,30 @@ function ProductDetail({ product, onClose, onAdd, reviews, bids, now, session, f
 }
 
 function LoginModal({ onClose, onLogin }) {
-  const [role, setRole] = useState('customer')
   const [name, setName] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const submit = (event) => { event.preventDefault(); if (role === 'customer' && !name.trim()) return setError('اسمت را وارد کن.'); if (role === 'admin' && password !== 'admin1405') return setError('رمز مدیریت درست نیست.'); onLogin({ role, name: role === 'admin' ? 'مدیر Polyshop' : name.trim() }) }
-  return <div className="modal-wrap login-wrap" role="dialog" aria-modal="true" aria-labelledby="login-title"><button className="overlay" aria-label="بستن ورود" onClick={onClose}/><div className="login-modal"><button className="icon-button modal-close" onClick={onClose} aria-label="بستن"><Icon name="close"/></button><BrandMark/><span className="section-tag">WELCOME TO PolyMoly</span><h2 id="login-title">چطور وارد می‌شی؟</h2><div className="role-switch"><button className={role === 'customer' ? 'active' : ''} onClick={() => { setRole('customer'); setError('') }}><Icon name="user"/><b>مشتری</b><small>خرید و ثبت آگهی</small></button><button className={role === 'admin' ? 'active' : ''} onClick={() => { setRole('admin'); setError('') }}><Icon name="store"/><b>مدیریت</b><small>کنترل فروشگاه</small></button></div><form onSubmit={submit}>{role === 'customer' ? <label>نام نمایشی<input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثلاً محمد، صنایع ۱۴۰۲" autoFocus/></label> : <><label>رمز مدیریت<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="رمز آزمایشی" autoFocus/></label><div className="login-hint">برای تست مدیریت: <code>admin1405</code></div></>}<div className="form-message error" aria-live="polite">{error}</div><button className="confirm-button" type="submit">ورود به {role === 'admin' ? 'پنل مدیریت' : 'حساب مشتری'} <Icon name="arrow"/></button></form><p>این ورود در نسخه فعلی نمایشی و فقط روی همین مرورگر ذخیره می‌شود.</p></div></div>
+  const submit = (event) => {
+    event.preventDefault()
+    const displayName = name.trim()
+    if (!displayName) return setError('اسمت را وارد کن.')
+    onLogin({ role: 'customer', name: displayName })
+  }
+  return (
+    <div className="modal-wrap login-wrap" role="dialog" aria-modal="true" aria-labelledby="login-title">
+      <button className="overlay" aria-label="بستن ورود" onClick={onClose}/>
+      <div className="login-modal">
+        <button className="icon-button modal-close" onClick={onClose} aria-label="بستن"><Icon name="close"/></button>
+        <BrandMark/>
+        <h2 id="login-title">ورود به حساب نمایشی</h2>
+        <form onSubmit={submit}>
+          <label>نام نمایشی<input value={name} onChange={(event) => setName(event.target.value)} placeholder="مثلاً محمد، صنایع ۱۴۰۲" autoFocus/></label>
+          <div className="form-message error" aria-live="polite">{error}</div>
+          <button className="confirm-button" type="submit">ورود به حساب مشتری <Icon name="arrow"/></button>
+        </form>
+        <p>این ورود فقط روی همین مرورگر ذخیره می‌شود.</p>
+      </div>
+    </div>
+  )
 }
 
 const seedReviews = [
@@ -171,7 +189,10 @@ function App() {
   const [wallet, setWallet] = useState(() => safeRead('boofeh-wallet', 0))
   const [usedCoupons, setUsedCoupons] = useState(() => safeRead('boofeh-coupons', []))
   const [couponCatalog, setCouponCatalog] = useState(() => ({ ...demoCoupons, ...safeRead('boofeh-coupon-catalog-v1', {}) }))
-  const [session, setSession] = useState(() => { const saved = safeRead('boofeh-session', null); return saved?.name === 'مدیر بوفه' ? { ...saved, name: 'مدیر Polyshop' } : saved })
+  const [session, setSession] = useState(() => {
+    const saved = safeRead('boofeh-session', null)
+    return saved?.role === 'customer' && typeof saved.name === 'string' ? { role: 'customer', name: saved.name } : null
+  })
   const [orders, setOrders] = useState(() => safeRead('boofeh-orders-v1', []))
   const [reviews, setReviews] = useState(() => safeRead('boofeh-reviews-v1', seedReviews))
   const [offers, setOffers] = useState(() => safeRead('boofeh-offers-v1', []))
@@ -298,7 +319,7 @@ function App() {
     {checkoutOpen && <div className="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="checkout-title"><button className="overlay" onClick={() => setCheckoutOpen(false)}/><div className="checkout-modal checkout-flow"><button className="icon-button modal-close" onClick={() => setCheckoutOpen(false)} aria-label="بستن"><Icon name="close"/></button><span className="section-tag">ONLINE CHECKOUT</span><h2 id="checkout-title">دریافت و زمان‌بندی</h2><p>برای هر مورد روش دریافت و در صورت نیاز زمان تحویل یا جلسه را مشخص کن.</p><div className="fulfillment-list">{cartItems.map((item) => <div className="fulfillment-item" key={item.id}><div><b>{item.title}</b><small>{item.seller} · {format(finalPrice(item) * item.qty)}</small></div>{item.productType === 'service' ? <span className="service-delivery">خدمت · {item.serviceMode === 'file' ? 'تحویل فایل' : item.serviceMode === 'inperson' ? 'جلسه حضوری' : 'جلسه آنلاین'}</span> : <div className="fulfillment-options">{item.deliveryMethods.includes('pickup') && <button className={checkoutChoices[item.id] === 'pickup' ? 'active' : ''} onClick={() => setCheckoutChoices((prev) => ({ ...prev, [item.id]: 'pickup' }))}>تحویل دانشگاه</button>}{item.deliveryMethods.includes('shipping') && <button className={checkoutChoices[item.id] === 'shipping' ? 'active' : ''} onClick={() => setCheckoutChoices((prev) => ({ ...prev, [item.id]: 'shipping' }))}>ارسال به آدرس</button>}</div>}{['pickup', 'service'].includes(checkoutChoices[item.id]) && <label className="slot-field">{item.productType === 'service' ? 'زمان جلسه/تحویل' : 'زمان تحویل در دانشگاه'}<input type="datetime-local" value={pickupSlots[item.id] || ''} onChange={(e) => { setPickupSlots((prev) => ({ ...prev, [item.id]: e.target.value })); setCheckoutError('') }}/><small>{item.productType === 'service' ? `زمان‌های پیشنهادی: ${item.availableSlots}` : `محل: ${item.pickupLocation}`}</small></label>}</div>)}</div>{cartItems.some((item) => checkoutChoices[item.id] === 'shipping') && <label className="address-field">آدرس کامل ارسال<textarea rows="3" value={shippingAddress} onChange={(e) => { setShippingAddress(e.target.value); setCheckoutError('') }} placeholder="شهر، خیابان، کوچه، پلاک و کدپستی"/></label>}<div className="form-message error" role="alert">{checkoutError}</div><div className="checkout-summary"><span><small>سفارش</small><b>{format(subtotal)}</b></span><span><small>ژتون</small><b>{format(walletSpend)}</b></span><span><small>پرداخت آنلاین</small><b>{format(gatewayAmount)}</b></span></div><button className="confirm-button" onClick={completeOrder}>تأیید و پرداخت آنلاین آزمایشی <Icon name="check"/></button><small className="escrow-note">برای تحویل حضوری یک کد چهاررقمی ساخته می‌شود؛ خریدار دریافت را تأیید می‌کند و بعد تسویه انجام می‌شود.</small></div></div>}
     {successOrder && <div className="modal-wrap"><button className="overlay" onClick={() => setSuccessOrder(null)}/><div className="success-modal"><span className="success-burst"><Icon name="check" size={34}/></span><h2>سفارش ثبت شد.</h2><p>موجودی و ژتون به‌روزرسانی شدند.</p><div className="order-code"><small>کد سفارش</small><b>{successOrder.id}</b></div><button onClick={() => setSuccessOrder(null)}>برگشت به Polyshop</button></div></div>}
     {selectedProduct && <ProductDetail product={selectedProduct} reviews={reviews} bids={bids} now={now} session={session} favorite={favorites.includes(selectedProduct.id)} onFavorite={toggleFavorite} onClose={() => setSelectedProduct(null)} onAdd={addToCart} onRequireLogin={() => setLoginOpen(true)} onReview={addReview} onOffer={addOffer} onReport={addReport} onBid={addBid}/>} 
-    {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} onLogin={(value) => { setSession(value); setLoginOpen(false); setPortalOpen(value.role === 'admin'); setToast(value.role === 'customer' ? 'خوش اومدی؛ فروشگاه همین‌جاست' : 'وارد پنل مدیریت شدی') }}/>} 
+    {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} onLogin={(value) => { setSession(value); setLoginOpen(false); setToast('خوش اومدی؛ فروشگاه همین‌جاست') }}/>}
     <SupportWidget session={session} messages={supportMessages} onRequireLogin={() => setLoginOpen(true)} onSend={sendSupport}/>
     <div className={`toast ${toast ? 'show' : ''}`} role="status"><Icon name="check" size={19}/>{toast}</div>
   </div>

@@ -92,6 +92,9 @@ chown -R "$account:$account" "$release"
 cp -a "$release/public" "$release/.next/standalone/public"
 mkdir -p "$release/.next/standalone/.next"
 cp -a "$release/.next/static" "$release/.next/standalone/.next/static"
+cache="$state/next-cache/${release##*/}"
+install -d -m 0700 -o "$account" -g "$account" "$state/next-cache" "$cache"
+ln -sT "$cache" "$release/.next/standalone/.next/cache"
 chown -R "root:$account" "$release"
 chmod 0750 "$release"
 if [[ ! -e /etc/polymoly-live/environment ]]; then
@@ -126,8 +129,17 @@ RestartSec=3
 UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
+PrivateDevices=true
 ProtectHome=true
 ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+MemoryMax=768M
+TasksMax=128
 ReadWritePaths=$state
 [Install]
 WantedBy=multi-user.target
@@ -149,6 +161,7 @@ if [[ -f /etc/letsencrypt/ssl-dhparams.pem ]]; then dh_extra='ssl_dhparam /etc/l
 cat > "$backup/new-nginx.conf" <<NGINX
 $marker
 limit_req_zone \$binary_remote_addr zone=polymoly_admin_login:10m rate=5r/m;
+limit_req_zone \$binary_remote_addr zone=polymoly_api:10m rate=10r/s;
 server {
     listen 80;
     listen [::]:80;
@@ -176,6 +189,12 @@ server {
     $dh_extra
     server_tokens off;
     client_max_body_size 64k;
+    limit_req_status 429;
+    # The application uses route handlers and has no Next Server Actions.
+    if (\$http_next_action != "") { return 405; }
+    add_header Strict-Transport-Security "max-age=86400" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    add_header Content-Security-Policy-Report-Only "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://trustseal.enamad.ir; connect-src 'self'; form-action 'self'" always;
     add_header X-Content-Type-Options nosniff always;
     add_header X-Frame-Options DENY always;
     add_header Referrer-Policy strict-origin-when-cross-origin always;
@@ -188,7 +207,10 @@ server {
     proxy_read_timeout 60s;
     location = /api/admin/login {
         limit_req zone=polymoly_admin_login burst=5 nodelay;
-        limit_req_status 429;
+        proxy_pass http://127.0.0.1:3210;
+    }
+    location /api/ {
+        limit_req zone=polymoly_api burst=30 nodelay;
         proxy_pass http://127.0.0.1:3210;
     }
     location / { proxy_pass http://127.0.0.1:3210; }
